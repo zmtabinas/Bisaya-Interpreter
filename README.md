@@ -2,6 +2,6 @@
 
 This is an ongoing project
 
-Pero mura nakog ma deads kay daghan kaayu buhatonon
+Tutorial Link: https://www.youtube.com/watch?v=8VB5TY1sIRo&list=PL_2VhOvlMk4UHGqYCLWc6GO8FaPl8fQTh
 
-I dont understand ngano problem ang "Deno". Pero mu run ra japon siya. HAYNAKO!
+From Ep 1 to 7 only. After that, I will try to create the interpreter for Bisaya++
