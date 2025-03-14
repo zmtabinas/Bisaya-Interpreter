@@ -7,6 +7,7 @@ export enum TokenType {
     Let,
     OpenParen, CloseParen,
     BinaryOperator,
+    EOF,    
 }
 
 // This is a dictionary
@@ -88,6 +89,7 @@ export function tokenize(sourceCode: string): Token[] {
         }
     }
 
+    tokens.push({type: TokenType.EOF, value: "EndOfFile"});
     return tokens;
 }
 const source = await Deno.readTextFile("./test.txt");
