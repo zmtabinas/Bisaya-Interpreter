@@ -12,7 +12,7 @@ From Ep 1 to 7 only. After that, I will try to create the interpreter for Bisaya
 EP 1 - DONE  
 EP 2 - DONE  
 EP 3 - DONE  
-EP 4 - STARTING...
+EP 4 - STARTING... 
 EP 5 - NOT DONE  
 EP 6 - NOT DONE  
 EP 7 - NOT DONE  
