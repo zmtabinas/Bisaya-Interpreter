@@ -21,4 +21,5 @@ EP 7 - NOT DONE 💔
 
 My thoughts: Do-able but it is very tricky and  
 will consume most of your brain power. 🧠
-
+  
+![giphy](https://github.com/user-attachments/assets/7e4ea571-6573-4de3-899a-431a074523df)
