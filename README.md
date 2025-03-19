@@ -2,10 +2,9 @@
 
 This is an ongoing project! 😌✌🏼
 
-Tutorial Link:  
-https://www.youtube.com/watch?v=8VB5TY1sIRo&list=PL_2VhOvlMk4UHGqYCLWc6GO8FaPl8fQTh
+Tutorial Link: https://encr.pw/OM3Zh ▶️
 
-IMPORTANT!  
+! ! ! IMPORTANT ！! !
 You must have Deno installed and you have to enable  
 it via ".vscode/settings.json" file and set "deno.enable": true
 
@@ -22,4 +21,5 @@ EP 7 - NOT DONE 💔 [ 𝙰𝚜𝚜𝚒𝚐𝚗𝚖𝚎𝚗𝚝𝚜 ]
 My thoughts: Do-able but it is very tricky and  
 will consume most of your brain power. 🧠
   
-![giphy](https://github.com/user-attachments/assets/7e4ea571-6573-4de3-899a-431a074523df)
+
+![8196c820a858eeade97c3e99629ddb52](https://github.com/user-attachments/assets/15a55fd1-22ff-4649-bb89-fa3bfb846909)
