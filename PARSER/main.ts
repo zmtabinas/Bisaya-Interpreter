@@ -1,4 +1,5 @@
 import Parser from "./FRONTEND/parser.ts";
+import { evaluate } from "./RUNTIME/interpreter.ts";
 
 repl();
 
@@ -14,5 +15,8 @@ function repl () {
 
         const program = parser.produceAST(input);
         console.log(program);
+
+        const result = evaluate(program);
+        console.log(result);
     }
 }

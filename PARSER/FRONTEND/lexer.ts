@@ -1,6 +1,7 @@
 // 
 
 export enum TokenType {
+    Null,
     Number,
     Identifier,
     Let,
@@ -14,6 +15,7 @@ export enum TokenType {
 // This is a dictionary
 const KEYWORDS: Record<string, TokenType> = {
     "let": TokenType.Let,
+    "null": TokenType.Null,
 }
 
 export interface Token {
@@ -76,10 +78,10 @@ export function tokenize(sourceCode: string): Token[] {
 
                 // check for reserved keyword
                 const reserved = KEYWORDS[ident];
-                if (reserved == undefined) {
-                    tokens.push(token(ident, TokenType.Identifier));
-                } else {
+                if (typeof reserved == "number") {
                     tokens.push(token(ident, reserved));
+                } else {
+                    tokens.push(token(ident, TokenType.Identifier));
                 }
             } else if (isSkippable(src[0])) {
                 src.shift();
