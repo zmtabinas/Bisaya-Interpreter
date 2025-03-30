@@ -1,9 +1,9 @@
 // 
 
 export enum TokenType {
-    Null,
     Number,
     Identifier,
+    String,
     Let,
     BinaryOperator,
     Equals,
@@ -15,7 +15,6 @@ export enum TokenType {
 // This is a dictionary
 const KEYWORDS: Record<string, TokenType> = {
     "let": TokenType.Let,
-    "null": TokenType.Null,
 }
 
 export interface Token {
