@@ -1,7 +1,7 @@
 import Parser from "./FRONTEND/parser.ts";
 import Environment from "./RUNTIME/environment.ts";
 import { evaluate } from "./RUNTIME/interpreter.ts";
-import { MK_NULL, MK_NUMBER, MK_BOOL } from "./RUNTIME/values.ts";
+import { MK_NULL, MK_BOOL } from "./RUNTIME/values.ts";
 
 repl();
 
