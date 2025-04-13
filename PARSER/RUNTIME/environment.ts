@@ -1,57 +1,57 @@
 import { RuntimeVal } from "./values.ts";
 
-
 export default class Environment {
-    private parent?: Environment; // ? means undefind, there might be a parent or not
-    private variables: Map<string, RuntimeVal>;
-    private constants: Set<string>;
+  private parent?: Environment;
+  private variables: Map<string, RuntimeVal>;
+  private constants: Set<string>;
 
-    constructor (parentENV?: Environment) {
-        this.parent = parentENV;
-        this.variables = new Map();
-        this.constants = new Set();
+  constructor(parentENV?: Environment) {
+    this.parent = parentENV;
+    this.variables = new Map();
+    this.constants = new Set();
+  }
+
+  public declareVar(
+    varname: string,
+    value: RuntimeVal,
+    constant: boolean,
+  ): RuntimeVal {
+    if (this.variables.has(varname)) {
+      throw `Cannot declare variable ${varname}. As it already is defined.`;
     }
 
-    public declareVar (varname: string, value: RuntimeVal, constant: boolean): RuntimeVal {
-        if (this.variables.has(varname)) {
-            throw 'Cannot declare variable ${varname}. As it already is defind.';
-        }
+    this.variables.set(varname, value);
+    if (constant) {
+      this.constants.add(varname);
+    }
+    return value;
+  }
 
-        this.variables.set(varname, value);
+  public assignVar(varname: string, value: RuntimeVal): RuntimeVal {
+    const env = this.resolve(varname);
 
-        if (constant) {
-            this.constants.add(varname);
-        }
-        return value;
+    if (env.constants.has(varname)) {
+      throw `Cannot reasign to variable ${varname} as it was declared constant.`;
     }
 
-    public assignVar (varname: string, value: RuntimeVal): RuntimeVal {
-        const env = this.resolve(varname);
+    env.variables.set(varname, value);
+    return value;
+  }
 
-        // if the env that our varname is located is when we are assigning is a constant
-        if (env.constants.has(varname)) {
-            throw "Cannot reassign to variable '${varname}' as it was declared constant."
-        }
+  public lookupVar(varname: string): RuntimeVal {
+    const env = this.resolve(varname);
+    return env.variables.get(varname) as RuntimeVal;
+  }
 
-        env.variables.set(varname, value);
-        
-        return value;
+  public resolve(varname: string): Environment {
+    if (this.variables.has(varname)) {
+      return this;
     }
 
-    public lookupVar (varname: string): RuntimeVal {
-        const env = this.resolve(varname);
-
-        return env.variables.get(varname) as RuntimeVal;
+    if (this.parent == undefined) {
+      throw `Cannot resolve '${varname}' as it does not exist.`;
     }
 
-    public resolve (varname: string): Environment { // traverse scope of environments
-        if (this.variables.has(varname))
-            return this;
-
-        if (this.parent == undefined) {
-            throw 'Cannot resolve ${varname} as it does not exist.';
-        }
-
-        return this.parent.resolve(varname);
-    }
+    return this.parent.resolve(varname);
+  }
 }

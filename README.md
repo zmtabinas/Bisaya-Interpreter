@@ -16,7 +16,9 @@ EP 3 - DONE ✅ [ 𝙰𝚂𝚃 𝙿𝚊𝚛𝚜𝚎𝚛 ]
 EP 4 - DONE ✅ [ 𝙸𝚗𝚝𝚎𝚛𝚙𝚛𝚎𝚝𝚎𝚛 ]  
 EP 5 - DONE ✅ [ 𝚂𝚌𝚘𝚙𝚎 & 𝙴𝚗𝚟𝚜 ]  
 EP 6 - DONE ✅ [ 𝚅𝚊𝚛 𝙳𝚎𝚌𝚕𝚊𝚛𝚊𝚝𝚒𝚘𝚗 ]  
-EP 7 - STARTING... 😍 [ 𝙰𝚜𝚜𝚒𝚐𝚗𝚖𝚎𝚗𝚝𝚜 ]  
+EP 7 - DONE ✅ [ 𝙰𝚜𝚜𝚒𝚐𝚗𝚖𝚎𝚗𝚝𝚜 ]  
+
+WILL START DEVELOPING BISAYA++ 😔
 
 My thoughts: Do-able but it is very tricky and  
 will consume most of your brain power. 🧠
