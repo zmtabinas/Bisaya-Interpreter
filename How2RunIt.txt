@@ -1,0 +1,14 @@
+Hi! Zed here!
+
+- To add pa ang files here, not yet done! ☺️
+
+How 2 Run:
+
+1. npm run build
+2. node dist/main.js path/to/your/testcases
+
+Example:
+
+>>> npm run build
+-- Then -- 
+>>> node dist/main.js hello.bisaya
