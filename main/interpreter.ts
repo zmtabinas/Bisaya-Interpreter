@@ -1,5 +1,7 @@
 // to add other files pa
 
+import * as readlineSync from 'readline-sync';
+
 import * as fs from 'fs';
 import { Lexer } from './lexer';
 import { Parser, Stmt, Expr } from './parser';
@@ -20,9 +22,11 @@ export class Interpreter {
   private execStmts(stmts: Stmt[]) {
     for (const st of stmts) {
       switch (st.kind) {
-        case 'decl': this.execDecl(st); break;
+        case 'decl':   this.execDecl(st); break;
         case 'assign': this.execAssign(st); break;
-        case 'print': this.execPrint(st); break;
+        case 'input':  this.execInput(st);  break;
+        case 'if':     this.execIf(st);     break;
+        case 'print':  this.execPrint(st); break;
       }
     }
   }
@@ -43,6 +47,45 @@ export class Interpreter {
     }
   }
 
+  private execInput(st: Extract<Stmt, { kind: 'input' }>) {
+    for (const name of st.vars) {
+      const v = readlineSync.question(`UNSAY VALUE NI ${name} BAI?: `);
+      const variable = this.vars.get(name);
+      if (!variable) throw new Error(`Undeclared var ${name}`);
+      switch (variable.type) {
+        case 'NUMERO':
+          variable.value = Number(v);
+          break;
+        case 'LETRA':
+          variable.value = v;
+          break;
+        case 'TINUOD':
+        case 'TIPIK':
+          variable.value = /^OO$/i.test(v) ? true : false;
+          break;
+      }
+    }
+  }
+
+  private execIf(st: Extract<Stmt, { kind: 'if' }>) {
+    const B = st.branches;
+    // 1) If condition on branch 0 is true
+    if (B[0] && Boolean(this.evalExpr(B[0].cond!))) {
+      return this.execStmts(B[0].body);
+    }
+    // 2) Else‐if branches (1 through n−2)
+    for (let i = 1; i < B.length - 1; i++) {
+      if (Boolean(this.evalExpr(B[i].cond!))) {
+        return this.execStmts(B[i].body);
+      }
+    }
+    // 3) Final else (cond===undefined)
+    const last = B.find(b => b.cond === undefined);
+    if (last) {
+      return this.execStmts(last.body);
+    }
+  }
+  
   private execPrint(st: Extract<Stmt, { kind: 'print' }>) {
     let out = '';
     for (const p of st.parts) {
@@ -54,7 +97,7 @@ export class Interpreter {
           else out += String(v);
       }
   }
-    process.stdout.write(out);
+    process.stdout.write(out + '\n');
   }
 
   private evalExpr(e: Expr): Value {
@@ -66,31 +109,34 @@ export class Interpreter {
     }
 
     if (e.kind === 'unary') {
-      const v = this.evalExpr(e.expr) as number;
-      return -v;
+      const v = this.evalExpr(e.expr);
+      if (e.operator === '-') return -(v as number);
+      if (e.operator === '!') return !(v as boolean);
+      throw new Error(`Unsupported unary ${e.operator}`);
   }
-  if (e.kind === 'binary') {
-      const L = this.evalExpr(e.left);
-      const R = this.evalExpr(e.right);
-      switch (e.operator) {
-          // arithmetic
-          case '+': return (L as number) + (R as number);
-          case '-': return (L as number) - (R as number);
-          case '*': return (L as number) * (R as number);
-          case '/': return (L as number) / (R as number);
-  
-          // comparison
-          case '<':  return (L as number) <  (R as number);
-          case '>':  return (L as number) >  (R as number);
-          case '<=': return (L as number) <= (R as number);
-          case '>=': return (L as number) >= (R as number);
-          case '<>': return (L as number) !== (R as number);
-  
-          // logical (short-circuiting not needed for now)
-          case 'UG': return (L as boolean) && (R as boolean);
-          case 'O':  return (L as boolean) || (R as boolean);
-      }
-  }
+
+    if (e.kind === 'binary') {
+        const L = this.evalExpr(e.left);
+        const R = this.evalExpr(e.right);
+        switch (e.operator) {
+            // arithmetic
+            case '+': return (L as number) + (R as number);
+            case '-': return (L as number) - (R as number);
+            case '*': return (L as number) * (R as number);
+            case '/': return (L as number) / (R as number);
+    
+            // comparison
+            case '<':  return (L as number) <  (R as number);
+            case '>':  return (L as number) >  (R as number);
+            case '<=': return (L as number) <= (R as number);
+            case '>=': return (L as number) >= (R as number);
+            case '<>': return (L as number) !== (R as number);
+    
+            // logical (short-circuiting not needed for now)
+            case 'UG': return (L as boolean) && (R as boolean);
+            case 'O':  return (L as boolean) || (R as boolean);
+        }
+    }
     throw new Error(`Unknown expr kind ${(e as any).kind}`);
   }
 

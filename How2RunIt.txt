@@ -11,4 +11,4 @@ Example:
 
 >>> npm run build
 -- Then -- 
->>> node dist/main.js hello.bisaya
+>>> node dist/main.js TestCase1

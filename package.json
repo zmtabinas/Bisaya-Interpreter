@@ -13,10 +13,12 @@
   "description": "This is an ongoing project! 😌✌🏼",
   "devDependencies": {
     "@types/node": "^22.15.2",
+    "@types/readline-sync": "^1.4.8",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "readline-sync": "^1.4.10",
     "undici-types": "^6.21.0"
   }
 }

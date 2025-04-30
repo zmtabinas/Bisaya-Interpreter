@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Interpreter = void 0;
+const readlineSync = __importStar(require("readline-sync"));
 const fs = __importStar(require("fs"));
 const lexer_1 = require("./lexer");
 const parser_1 = require("./parser");
@@ -59,6 +60,12 @@ class Interpreter {
                 case 'assign':
                     this.execAssign(st);
                     break;
+                case 'input':
+                    this.execInput(st);
+                    break;
+                case 'if':
+                    this.execIf(st);
+                    break;
                 case 'print':
                     this.execPrint(st);
                     break;
@@ -80,6 +87,44 @@ class Interpreter {
             v.value = val;
         }
     }
+    execInput(st) {
+        for (const name of st.vars) {
+            const v = readlineSync.question(`UNSAY VALUE NI ${name} BAI?: `);
+            const variable = this.vars.get(name);
+            if (!variable)
+                throw new Error(`Undeclared var ${name}`);
+            switch (variable.type) {
+                case 'NUMERO':
+                    variable.value = Number(v);
+                    break;
+                case 'LETRA':
+                    variable.value = v;
+                    break;
+                case 'TINUOD':
+                case 'TIPIK':
+                    variable.value = /^OO$/i.test(v) ? true : false;
+                    break;
+            }
+        }
+    }
+    execIf(st) {
+        const B = st.branches;
+        // 1) If condition on branch 0 is true
+        if (B[0] && Boolean(this.evalExpr(B[0].cond))) {
+            return this.execStmts(B[0].body);
+        }
+        // 2) Else‐if branches (1 through n−2)
+        for (let i = 1; i < B.length - 1; i++) {
+            if (Boolean(this.evalExpr(B[i].cond))) {
+                return this.execStmts(B[i].body);
+            }
+        }
+        // 3) Final else (cond===undefined)
+        const last = B.find(b => b.cond === undefined);
+        if (last) {
+            return this.execStmts(last.body);
+        }
+    }
     execPrint(st) {
         let out = '';
         for (const p of st.parts) {
@@ -94,7 +139,7 @@ class Interpreter {
                     out += String(v);
             }
         }
-        process.stdout.write(out);
+        process.stdout.write(out + '\n');
     }
     evalExpr(e) {
         if (e.kind === 'literal')
@@ -107,7 +152,11 @@ class Interpreter {
         }
         if (e.kind === 'unary') {
             const v = this.evalExpr(e.expr);
-            return -v;
+            if (e.operator === '-')
+                return -v;
+            if (e.operator === '!')
+                return !v;
+            throw new Error(`Unsupported unary ${e.operator}`);
         }
         if (e.kind === 'binary') {
             const L = this.evalExpr(e.left);

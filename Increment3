@@ -1,0 +1,16 @@
+SUGOD
+MUGNA NUMERO x, y
+DAWAT: x, y
+KUNG (x < y)
+PUNDOK{
+  IPAKITA: "x mas gamay"
+}
+KUNG DILI (x < y)
+PUNDOK{
+  IPAKITA: "x dili mas gamay"
+}
+KUNG WALA
+PUNDOK{
+  IPAKITA: "the same"
+}
+KATAPUSAN
