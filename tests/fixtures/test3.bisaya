@@ -1,0 +1,7 @@
+SUGOD
+MUGNA NUMERO x=10, y=20
+KUNG (x < y)
+PUNDOK{ IPAKITA: "x mas gamay" }
+KUNG DILI (x < y)
+PUNDOK{ IPAKITA: "x dili mas gamay" }
+KATAPUSAN

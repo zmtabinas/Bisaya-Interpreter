@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "start": "ts-node main/main.ts"
+    "start": "ts-node main/main.ts",
+    "test": "node tests/testSuite.js"
   },
   "keywords": [],
   "author": "",

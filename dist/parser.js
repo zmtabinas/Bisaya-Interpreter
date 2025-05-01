@@ -27,6 +27,8 @@ class Parser {
                 stmts.push(this.parseInput());
             else if (tok.type === lexer_1.TokenType.Keyword && tok.text === 'KUNG')
                 stmts.push(this.parseIf());
+            else if (tok.type === lexer_1.TokenType.Keyword && tok.text === 'ALANG')
+                stmts.push(this.parseFor());
             else if (tok.type === lexer_1.TokenType.Keyword && tok.text === 'IPAKITA')
                 stmts.push(this.parsePrint());
             else if (tok.type === lexer_1.TokenType.Identifier)
@@ -57,16 +59,21 @@ class Parser {
         return { kind: 'decl', type, decls };
     }
     parseInput() {
+        // 1) expect the keyword
         this.expect(lexer_1.TokenType.Keyword, 'DAWAT');
+        // 2) expect the colon punctuation
         this.expect(lexer_1.TokenType.Punctuation, ':');
+        // 3) collect one-or-more identifiers
         const vars = [];
-        // first var
+        // first variable name
         vars.push(this.expect(lexer_1.TokenType.Identifier).text);
-        // optional , more vars
-        while (this.peek().type === lexer_1.TokenType.Punctuation && this.peek().text === ',') {
-            this.advance();
+        // additional names if “, name”
+        while (this.peek().type === lexer_1.TokenType.Punctuation
+            && this.peek().text === ',') {
+            this.advance(); // consume the comma
             vars.push(this.expect(lexer_1.TokenType.Identifier).text);
         }
+        // done—return an input statement node
         return { kind: 'input', vars };
     }
     parseIf() {
@@ -157,12 +164,57 @@ class Parser {
         this.expect(lexer_1.TokenType.Punctuation, '}');
         return stmts;
     }
+    parseFor() {
+        // consume ALANG SA
+        this.expect(lexer_1.TokenType.Keyword, 'ALANG');
+        this.expect(lexer_1.TokenType.Keyword, 'SA');
+        // parentheses
+        this.expect(lexer_1.TokenType.Punctuation, '(');
+        // init: assignment stmt (identifier = expr)
+        const initStmt = this.parseAssign();
+        this.expect(lexer_1.TokenType.Punctuation, ',');
+        // cond: boolean expr
+        const condExpr = this.parseExpr();
+        this.expect(lexer_1.TokenType.Punctuation, ',');
+        // update: either a unary ++/-- or assign
+        let updateStmt;
+        const next = this.peek();
+        if (next.type === lexer_1.TokenType.Identifier && this.tokens[this.pos + 1].text.match(/\+\+|--/)) {
+            // unary update: e.g. ctr++
+            const name = this.expect(lexer_1.TokenType.Identifier).text;
+            const opTok = this.expect(lexer_1.TokenType.Operator);
+            const op = opTok.text; // '++' or '--'
+            // transform to assign: ctr = ctr + 1 or -1
+            const one = { kind: 'literal', value: 1 };
+            const expr = { kind: 'binary', left: { kind: 'ident', name }, operator: op === '++' ? '+' : '-', right: one };
+            updateStmt = { kind: 'assign', targets: [name], expr };
+        }
+        else {
+            // normal assign
+            updateStmt = this.parseAssign();
+        }
+        // close paren
+        this.expect(lexer_1.TokenType.Punctuation, ')');
+        // body block
+        const body = this.parseBlock();
+        return { kind: 'for', init: initStmt, cond: condExpr, update: updateStmt, body };
+    }
     parseAssign() {
+        // parse a chain like x=y=z or a single assignment a = expr
         const targets = [];
-        do {
-            targets.push(this.expect(lexer_1.TokenType.Identifier).text);
+        // first target
+        targets.push(this.expect(lexer_1.TokenType.Identifier).text);
+        // we must see exactly one '=' next
+        this.expect(lexer_1.TokenType.Operator, '=');
+        // support x=y=z by repeating: but only if the next token is IDENTIFIER *and* the following is '='
+        while (this.peek().type === lexer_1.TokenType.Identifier
+            && this.tokens[this.pos + 1].text === '=') {
+            // consume the identifier target
+            targets.push(this.advance().text);
+            // consume the '='
             this.expect(lexer_1.TokenType.Operator, '=');
-        } while (this.peek().type === lexer_1.TokenType.Identifier);
+        }
+        // now the RHS expression
         const expr = this.parseExpr();
         return { kind: 'assign', targets, expr };
     }
@@ -215,6 +267,11 @@ class Parser {
                 const contentTok = this.advance();
                 this.expect(lexer_1.TokenType.Punctuation, ']');
                 parts.push({ literal: contentTok.text });
+            }
+            else if (tok.text === '(') {
+                // allow parenthesized expression inside a print part
+                const expr = this.parseExpr();
+                parts.push({ expr });
             }
             else if (tok.type === lexer_1.TokenType.Number || tok.type === lexer_1.TokenType.String || tok.type === lexer_1.TokenType.Identifier) {
                 // parseExpr will advance for numbers, strings, identifiers
@@ -303,8 +360,15 @@ class Parser {
             return { kind: 'literal', value: Number(tok.text) };
         }
         if (tok.type === lexer_1.TokenType.String) {
+            // special-case Bisaya boolean literals
+            const s = tok.text;
+            const up = s.toUpperCase();
             this.advance();
-            return { kind: 'literal', value: tok.text };
+            if (up === 'OO')
+                return { kind: 'literal', value: true };
+            if (up === 'DILI')
+                return { kind: 'literal', value: false };
+            return { kind: 'literal', value: s };
         }
         if (tok.type === lexer_1.TokenType.Identifier) {
             this.advance();

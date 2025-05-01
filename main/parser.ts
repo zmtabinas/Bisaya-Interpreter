@@ -12,7 +12,13 @@ export type Stmt =
         cond?: Expr,
         body: Stmt[]
       }>
-    };
+    }
+  | { kind: 'for',
+      init: Stmt,
+      cond: Expr,
+      update: Stmt,
+      body: Stmt[]
+  };
 
 export class Parser {
   private pos = 0;
@@ -33,8 +39,9 @@ export class Parser {
     while (!(this.peek().type === TokenType.Keyword && this.peek().text === 'KATAPUSAN')) {
       const tok = this.peek();
       if (tok.type === TokenType.Keyword && tok.text === 'MUGNA') stmts.push(this.parseDecl());
-      else if (tok.type===TokenType.Keyword && tok.text==='DAWAT')   stmts.push(this.parseInput());
+      else if (tok.type===TokenType.Keyword && tok.text==='DAWAT') stmts.push(this.parseInput());
       else if (tok.type===TokenType.Keyword && tok.text==='KUNG') stmts.push(this.parseIf());
+      else if (tok.type===TokenType.Keyword && tok.text==='ALANG') stmts.push(this.parseFor());
       else if (tok.type===TokenType.Keyword && tok.text==='IPAKITA') stmts.push(this.parsePrint());
       else if (tok.type === TokenType.Identifier) stmts.push(this.parseAssign());
       else this.advance();
@@ -61,19 +68,27 @@ export class Parser {
   }
 
   private parseInput(): Stmt {
+    // 1) expect the keyword
     this.expect(TokenType.Keyword, 'DAWAT');
-    this.expect(TokenType.Punctuation, ':');
-    const vars: string[] = [];
   
-    // first var
+    // 2) expect the colon punctuation
+    this.expect(TokenType.Punctuation, ':');
+  
+    // 3) collect one-or-more identifiers
+    const vars: string[] = [];
+    // first variable name
     vars.push(this.expect(TokenType.Identifier).text);
   
-    // optional , more vars
-    while (this.peek().type === TokenType.Punctuation && this.peek().text === ',') {
-      this.advance();
+    // additional names if “, name”
+    while (
+      this.peek().type === TokenType.Punctuation
+      && this.peek().text === ','
+    ) {
+      this.advance();  // consume the comma
       vars.push(this.expect(TokenType.Identifier).text);
     }
   
+    // done—return an input statement node
     return { kind: 'input', vars };
   }
 
@@ -165,17 +180,75 @@ export class Parser {
     }
     this.expect(TokenType.Punctuation, '}');
     return stmts;
-  }  
+  }
+
+  private parseFor(): Stmt {
+    // consume ALANG SA
+    this.expect(TokenType.Keyword, 'ALANG');
+    this.expect(TokenType.Keyword, 'SA');
+  
+    // parentheses
+    this.expect(TokenType.Punctuation, '(');
+  
+    // init: assignment stmt (identifier = expr)
+    const initStmt = this.parseAssign();
+    this.expect(TokenType.Punctuation, ',');
+  
+    // cond: boolean expr
+    const condExpr = this.parseExpr();
+    this.expect(TokenType.Punctuation, ',');
+  
+    // update: either a unary ++/-- or assign
+    let updateStmt: Stmt;
+    const next = this.peek();
+    if (next.type === TokenType.Identifier && this.tokens[this.pos+1].text.match(/\+\+|--/)) {
+      // unary update: e.g. ctr++
+      const name = this.expect(TokenType.Identifier).text;
+      const opTok = this.expect(TokenType.Operator);
+      const op = opTok.text;   // '++' or '--'
+      // transform to assign: ctr = ctr + 1 or -1
+      const one: Expr = { kind: 'literal', value: 1 };
+      const expr: Expr = { kind: 'binary', left: { kind: 'ident', name }, operator: op === '++' ? '+' : '-', right: one };
+      updateStmt = { kind: 'assign', targets: [name], expr };
+    } else {
+      // normal assign
+      updateStmt = this.parseAssign();
+    }
+  
+    // close paren
+    this.expect(TokenType.Punctuation, ')');
+  
+    // body block
+    const body = this.parseBlock();
+  
+    return { kind: 'for', init: initStmt, cond: condExpr, update: updateStmt, body };
+  }
 
   private parseAssign(): Stmt {
+    // parse a chain like x=y=z or a single assignment a = expr
     const targets: string[] = [];
-    do {
-      targets.push(this.expect(TokenType.Identifier).text);
+  
+    // first target
+    targets.push(this.expect(TokenType.Identifier).text);
+    // we must see exactly one '=' next
+    this.expect(TokenType.Operator, '=');
+  
+    // support x=y=z by repeating: but only if the next token is IDENTIFIER *and* the following is '='
+    while (
+      this.peek().type === TokenType.Identifier
+      && this.tokens[this.pos + 1].text === '='
+    ) {
+      // consume the identifier target
+      targets.push(this.advance().text);
+      // consume the '='
       this.expect(TokenType.Operator, '=');
-    } while (this.peek().type === TokenType.Identifier);
+    }
+  
+    // now the RHS expression
     const expr = this.parseExpr();
     return { kind: 'assign', targets, expr };
   }
+  
 
   private parsePrint(): Stmt {
     this.expect(TokenType.Keyword, 'IPAKITA');
@@ -226,6 +299,11 @@ export class Parser {
         const contentTok = this.advance();
         this.expect(TokenType.Punctuation, ']');
         parts.push({ literal: contentTok.text });
+      }
+      else if (tok.text === '(') {
+        // allow parenthesized expression inside a print part
+        const expr = this.parseExpr();
+        parts.push({ expr });
       }
       else if (tok.type === TokenType.Number || tok.type === TokenType.String || tok.type === TokenType.Identifier) {
         // parseExpr will advance for numbers, strings, identifiers
@@ -320,8 +398,13 @@ export class Parser {
         return { kind: 'literal', value: Number(tok.text) };
     }
     if (tok.type === TokenType.String) {
-        this.advance();
-        return { kind: 'literal', value: tok.text };
+      // special-case Bisaya boolean literals
+      const s  = tok.text;
+      const up = s.toUpperCase();
+      this.advance();
+      if (up === 'OO')   return { kind: 'literal', value: true  };
+      if (up === 'DILI') return { kind: 'literal', value: false };
+      return { kind: 'literal', value: s };
     }
     if (tok.type === TokenType.Identifier) {
         this.advance();

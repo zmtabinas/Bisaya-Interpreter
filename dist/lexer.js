@@ -84,7 +84,7 @@ class Lexer {
                 this.pos += 2;
                 continue;
             }
-            if ('+-*/%<>=&$,#(){}[]:'.includes(c)) {
+            if ('+-*/%<>=&$!,#(){}[]:'.includes(c)) {
                 const type = '(){}[],:'.includes(c) ? TokenType.Punctuation : TokenType.Operator;
                 tokens.push(new Token(type, this.advance()));
                 continue;

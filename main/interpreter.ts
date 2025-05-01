@@ -22,11 +22,12 @@ export class Interpreter {
   private execStmts(stmts: Stmt[]) {
     for (const st of stmts) {
       switch (st.kind) {
-        case 'decl':   this.execDecl(st); break;
+        case 'decl':   this.execDecl(st);   break;
         case 'assign': this.execAssign(st); break;
         case 'input':  this.execInput(st);  break;
         case 'if':     this.execIf(st);     break;
-        case 'print':  this.execPrint(st); break;
+        case 'for':    this.execFor(st);    break;
+        case 'print':  this.execPrint(st);  break;
       }
     }
   }
@@ -49,24 +50,35 @@ export class Interpreter {
 
   private execInput(st: Extract<Stmt, { kind: 'input' }>) {
     for (const name of st.vars) {
-      const v = readlineSync.question(`UNSAY VALUE NI ${name} BAI?: `);
+      // 1) look up variable declaration
       const variable = this.vars.get(name);
       if (!variable) throw new Error(`Undeclared var ${name}`);
+  
+      // 2) prompt in Bisaya style
+      const raw = readlineSync.question(
+        `UNSAY VALUE NI ${name.toUpperCase()} BAI?: `
+      );
+  
+      // 3) store into the right type slot
       switch (variable.type) {
         case 'NUMERO':
-          variable.value = Number(v);
+          variable.value = Number(raw);
+          break;
+        case 'TIPIK':
+          variable.value = parseFloat(raw);
           break;
         case 'LETRA':
-          variable.value = v;
+          // take first char of the string
+          variable.value = raw.charAt(0);
           break;
         case 'TINUOD':
-        case 'TIPIK':
-          variable.value = /^OO$/i.test(v) ? true : false;
+          // OO → true, anything else → false
+          variable.value = /^OO$/i.test(raw) ? true : false;
           break;
       }
     }
   }
-
+  
   private execIf(st: Extract<Stmt, { kind: 'if' }>) {
     const B = st.branches;
     // 1) If condition on branch 0 is true
@@ -85,6 +97,17 @@ export class Interpreter {
       return this.execStmts(last.body);
     }
   }
+
+  private execFor(st: Extract<Stmt, { kind: 'for' }>) {
+    // initialization
+    this.execStmts([ st.init ]);
+  
+    // loop
+    while (this.evalExpr(st.cond) as boolean) {
+      this.execStmts(st.body);
+      this.execStmts([ st.update ]);
+    }
+  }
   
   private execPrint(st: Extract<Stmt, { kind: 'print' }>) {
     let out = '';
@@ -97,7 +120,7 @@ export class Interpreter {
           else out += String(v);
       }
   }
-    process.stdout.write(out + '\n');
+    process.stdout.write(out);
   }
 
   private evalExpr(e: Expr): Value {

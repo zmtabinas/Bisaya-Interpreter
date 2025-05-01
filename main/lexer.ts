@@ -64,7 +64,7 @@ export enum TokenType {
         if (['<=','>=','==','<>','++'].includes(two)) {
           tokens.push(new Token(TokenType.Operator, two)); this.pos += 2; continue;
         }
-        if ('+-*/%<>=&$,#(){}[]:'.includes(c)) {
+        if ('+-*/%<>=&$!,#(){}[]:'.includes(c)) {
           const type = '(){}[],:'.includes(c) ? TokenType.Punctuation : TokenType.Operator;
           tokens.push(new Token(type, this.advance()));
           continue;

@@ -66,6 +66,9 @@ class Interpreter {
                 case 'if':
                     this.execIf(st);
                     break;
+                case 'for':
+                    this.execFor(st);
+                    break;
                 case 'print':
                     this.execPrint(st);
                     break;
@@ -89,20 +92,27 @@ class Interpreter {
     }
     execInput(st) {
         for (const name of st.vars) {
-            const v = readlineSync.question(`UNSAY VALUE NI ${name} BAI?: `);
+            // 1) look up variable declaration
             const variable = this.vars.get(name);
             if (!variable)
                 throw new Error(`Undeclared var ${name}`);
+            // 2) prompt in Bisaya style
+            const raw = readlineSync.question(`UNSAY VALUE NI ${name.toUpperCase()} BAI?: `);
+            // 3) store into the right type slot
             switch (variable.type) {
                 case 'NUMERO':
-                    variable.value = Number(v);
+                    variable.value = Number(raw);
+                    break;
+                case 'TIPIK':
+                    variable.value = parseFloat(raw);
                     break;
                 case 'LETRA':
-                    variable.value = v;
+                    // take first char of the string
+                    variable.value = raw.charAt(0);
                     break;
                 case 'TINUOD':
-                case 'TIPIK':
-                    variable.value = /^OO$/i.test(v) ? true : false;
+                    // OO → true, anything else → false
+                    variable.value = /^OO$/i.test(raw) ? true : false;
                     break;
             }
         }
@@ -125,6 +135,15 @@ class Interpreter {
             return this.execStmts(last.body);
         }
     }
+    execFor(st) {
+        // initialization
+        this.execStmts([st.init]);
+        // loop
+        while (this.evalExpr(st.cond)) {
+            this.execStmts(st.body);
+            this.execStmts([st.update]);
+        }
+    }
     execPrint(st) {
         let out = '';
         for (const p of st.parts) {
@@ -139,7 +158,7 @@ class Interpreter {
                     out += String(v);
             }
         }
-        process.stdout.write(out + '\n');
+        process.stdout.write(out);
     }
     evalExpr(e) {
         if (e.kind === 'literal')

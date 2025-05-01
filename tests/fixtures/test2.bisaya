@@ -1,0 +1,7 @@
+SUGOD
+MUGNA NUMERO ctr=1
+ALANG SA (ctr=1, ctr<=5, ctr++)
+PUNDOK{
+  IPAKITA: ctr & ' '
+}
+KATAPUSAN
