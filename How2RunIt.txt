@@ -10,5 +10,12 @@ How 2 Run:
 Example:
 
 >>> npm run build
+
 -- Then -- 
+
 >>> node dist/main.js TestCase1
+
+-- Or -- 
+
+>>> npm run build
+>>> npm test

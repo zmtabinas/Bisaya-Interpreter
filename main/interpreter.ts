@@ -1,7 +1,4 @@
-// to add other files pa
-
 import * as readlineSync from 'readline-sync';
-
 import * as fs from 'fs';
 import { Lexer } from './lexer';
 import { Parser, Stmt, Expr } from './parser';
@@ -50,16 +47,13 @@ export class Interpreter {
 
   private execInput(st: Extract<Stmt, { kind: 'input' }>) {
     for (const name of st.vars) {
-      // 1) look up variable declaration
       const variable = this.vars.get(name);
       if (!variable) throw new Error(`Undeclared var ${name}`);
   
-      // 2) prompt in Bisaya style
       const raw = readlineSync.question(
         `UNSAY VALUE NI ${name.toUpperCase()} BAI?: `
       );
   
-      // 3) store into the right type slot
       switch (variable.type) {
         case 'NUMERO':
           variable.value = Number(raw);
@@ -68,11 +62,9 @@ export class Interpreter {
           variable.value = parseFloat(raw);
           break;
         case 'LETRA':
-          // take first char of the string
           variable.value = raw.charAt(0);
           break;
         case 'TINUOD':
-          // OO → true, anything else → false
           variable.value = /^OO$/i.test(raw) ? true : false;
           break;
       }
@@ -81,17 +73,14 @@ export class Interpreter {
   
   private execIf(st: Extract<Stmt, { kind: 'if' }>) {
     const B = st.branches;
-    // 1) If condition on branch 0 is true
     if (B[0] && Boolean(this.evalExpr(B[0].cond!))) {
       return this.execStmts(B[0].body);
     }
-    // 2) Else‐if branches (1 through n−2)
     for (let i = 1; i < B.length - 1; i++) {
       if (Boolean(this.evalExpr(B[i].cond!))) {
         return this.execStmts(B[i].body);
       }
     }
-    // 3) Final else (cond===undefined)
     const last = B.find(b => b.cond === undefined);
     if (last) {
       return this.execStmts(last.body);
@@ -99,10 +88,8 @@ export class Interpreter {
   }
 
   private execFor(st: Extract<Stmt, { kind: 'for' }>) {
-    // initialization
     this.execStmts([ st.init ]);
   
-    // loop
     while (this.evalExpr(st.cond) as boolean) {
       this.execStmts(st.body);
       this.execStmts([ st.update ]);
@@ -142,20 +129,15 @@ export class Interpreter {
         const L = this.evalExpr(e.left);
         const R = this.evalExpr(e.right);
         switch (e.operator) {
-            // arithmetic
             case '+': return (L as number) + (R as number);
             case '-': return (L as number) - (R as number);
             case '*': return (L as number) * (R as number);
             case '/': return (L as number) / (R as number);
-    
-            // comparison
             case '<':  return (L as number) <  (R as number);
             case '>':  return (L as number) >  (R as number);
             case '<=': return (L as number) <= (R as number);
             case '>=': return (L as number) >= (R as number);
             case '<>': return (L as number) !== (R as number);
-    
-            // logical (short-circuiting not needed for now)
             case 'UG': return (L as boolean) && (R as boolean);
             case 'O':  return (L as boolean) || (R as boolean);
         }

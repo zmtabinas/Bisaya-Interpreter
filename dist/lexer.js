@@ -38,19 +38,16 @@ class Lexer {
         const tokens = [];
         while (!this.isAtEnd()) {
             let c = this.peek();
-            // whitespace
             if (/\s/.test(c)) {
                 this.advance();
                 continue;
             }
-            // comment
             if (c === '-' && this.input.substr(this.pos, 2) === '--') {
                 while (!this.isAtEnd() && c !== '\n') {
                     c = this.advance();
                 }
                 continue;
             }
-            // identifier/keyword
             if (/[A-Za-z_]/.test(c)) {
                 let id = '';
                 while (/[A-Za-z0-9_]/.test(this.peek()))
@@ -59,7 +56,6 @@ class Lexer {
                 tokens.push(new Token(KEYWORDS.has(up) ? TokenType.Keyword : TokenType.Identifier, up));
                 continue;
             }
-            // number
             if (/[0-9]/.test(c)) {
                 let num = '';
                 while (/[0-9\.]/.test(this.peek()))
@@ -67,7 +63,6 @@ class Lexer {
                 tokens.push(new Token(TokenType.Number, num));
                 continue;
             }
-            // string
             if (c === '"' || c === "'") {
                 const quote = this.advance();
                 let str = '';
@@ -77,7 +72,6 @@ class Lexer {
                 tokens.push(new Token(TokenType.String, str));
                 continue;
             }
-            // ops and punc
             const two = this.input.substr(this.pos, 2);
             if (['<=', '>=', '==', '<>', '++'].includes(two)) {
                 tokens.push(new Token(TokenType.Operator, two));

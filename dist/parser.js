@@ -15,7 +15,6 @@ class Parser {
             throw new Error(`Expected ${text || type}, got ${tok.text}`);
         return this.advance();
     }
-    // Place all custom statements below here guys. Thanks!
     parse() {
         const stmts = [];
         this.expect(lexer_1.TokenType.Keyword, 'SUGOD');
@@ -59,45 +58,33 @@ class Parser {
         return { kind: 'decl', type, decls };
     }
     parseInput() {
-        // 1) expect the keyword
         this.expect(lexer_1.TokenType.Keyword, 'DAWAT');
-        // 2) expect the colon punctuation
         this.expect(lexer_1.TokenType.Punctuation, ':');
-        // 3) collect one-or-more identifiers
         const vars = [];
-        // first variable name
         vars.push(this.expect(lexer_1.TokenType.Identifier).text);
-        // additional names if “, name”
         while (this.peek().type === lexer_1.TokenType.Punctuation
             && this.peek().text === ',') {
-            this.advance(); // consume the comma
+            this.advance();
             vars.push(this.expect(lexer_1.TokenType.Identifier).text);
         }
-        // done—return an input statement node
         return { kind: 'input', vars };
     }
     parseIf() {
         const branches = [];
-        // 1) the “if” branch
         this.expect(lexer_1.TokenType.Keyword, 'KUNG');
         this.expect(lexer_1.TokenType.Punctuation, '(');
         const ifCond = this.parseExpr();
         this.expect(lexer_1.TokenType.Punctuation, ')');
         const ifBody = this.parseBlock();
         branches.push({ cond: ifCond, body: ifBody });
-        // 2) zero or more "else-if" (only if it's KUNG DILI (...) or KUNG (...)—not KUNG WALA)
         while (this.peek().type === lexer_1.TokenType.Keyword && this.peek().text === 'KUNG' &&
-            // look ahead one token to see if it really is DILI or an expression:
             ((this.tokens[this.pos + 1].text === 'DILI') || (this.tokens[this.pos + 1].text === '('))) {
-            // consume the KUNG
             this.advance();
             if (this.peek().text === 'DILI') {
-                // KUNG DILI(x<y) → we want x>y (strict greater)
-                this.advance(); // consume 'DILI'
+                this.advance();
                 this.expect(lexer_1.TokenType.Punctuation, '(');
-                const raw = this.parseExpr(); // e.g. {kind:'binary', left, op:'<', right}
+                const raw = this.parseExpr();
                 this.expect(lexer_1.TokenType.Punctuation, ')');
-                // If it's a simple comparison, flip it:
                 let condExpr;
                 if (raw.kind === 'binary' && ['<', '>', '<=', '>=', '<>'].includes(raw.operator)) {
                     const invertOp = {
@@ -105,7 +92,7 @@ class Parser {
                         '>': '<',
                         '<=': '>=',
                         '>=': '<=',
-                        '<>': '===' // inequality invert → strict equality
+                        '<>': '==='
                     };
                     condExpr = {
                         kind: 'binary',
@@ -115,14 +102,12 @@ class Parser {
                     };
                 }
                 else {
-                    // fallback to boolean NOT if it wasn't a simple compare
                     condExpr = { kind: 'unary', operator: '!', expr: raw };
                 }
                 const elifBody = this.parseBlock();
                 branches.push({ cond: condExpr, body: elifBody });
             }
             else if (this.peek().text === '(') {
-                // alternate else-if written as KUNG (<expr>)
                 this.expect(lexer_1.TokenType.Punctuation, '(');
                 const elifCond = this.parseExpr();
                 this.expect(lexer_1.TokenType.Punctuation, ')');
@@ -133,7 +118,6 @@ class Parser {
                 break;
             }
         }
-        // 3) optional “else” – written KUNG WALA PUNDOK{…}
         if (this.peek().type === lexer_1.TokenType.Keyword && this.peek().text === 'KUNG') {
             this.advance();
             this.expect(lexer_1.TokenType.Keyword, 'WALA');
@@ -143,11 +127,9 @@ class Parser {
         return { kind: 'if', branches };
     }
     parseBlock() {
-        // consume PUNDOK{
         this.expect(lexer_1.TokenType.Keyword, 'PUNDOK');
         this.expect(lexer_1.TokenType.Punctuation, '{');
         const stmts = [];
-        // gather until matching }
         while (!(this.peek().type === lexer_1.TokenType.Punctuation && this.peek().text === '}')) {
             const tok = this.peek();
             if (tok.type === lexer_1.TokenType.Keyword && tok.text === 'DAWAT')
@@ -165,87 +147,48 @@ class Parser {
         return stmts;
     }
     parseFor() {
-        // consume ALANG SA
         this.expect(lexer_1.TokenType.Keyword, 'ALANG');
         this.expect(lexer_1.TokenType.Keyword, 'SA');
-        // parentheses
         this.expect(lexer_1.TokenType.Punctuation, '(');
-        // init: assignment stmt (identifier = expr)
         const initStmt = this.parseAssign();
         this.expect(lexer_1.TokenType.Punctuation, ',');
-        // cond: boolean expr
         const condExpr = this.parseExpr();
         this.expect(lexer_1.TokenType.Punctuation, ',');
-        // update: either a unary ++/-- or assign
         let updateStmt;
         const next = this.peek();
         if (next.type === lexer_1.TokenType.Identifier && this.tokens[this.pos + 1].text.match(/\+\+|--/)) {
-            // unary update: e.g. ctr++
             const name = this.expect(lexer_1.TokenType.Identifier).text;
             const opTok = this.expect(lexer_1.TokenType.Operator);
-            const op = opTok.text; // '++' or '--'
-            // transform to assign: ctr = ctr + 1 or -1
+            const op = opTok.text;
             const one = { kind: 'literal', value: 1 };
             const expr = { kind: 'binary', left: { kind: 'ident', name }, operator: op === '++' ? '+' : '-', right: one };
             updateStmt = { kind: 'assign', targets: [name], expr };
         }
         else {
-            // normal assign
             updateStmt = this.parseAssign();
         }
-        // close paren
         this.expect(lexer_1.TokenType.Punctuation, ')');
-        // body block
         const body = this.parseBlock();
         return { kind: 'for', init: initStmt, cond: condExpr, update: updateStmt, body };
     }
     parseAssign() {
-        // parse a chain like x=y=z or a single assignment a = expr
         const targets = [];
-        // first target
         targets.push(this.expect(lexer_1.TokenType.Identifier).text);
-        // we must see exactly one '=' next
         this.expect(lexer_1.TokenType.Operator, '=');
-        // support x=y=z by repeating: but only if the next token is IDENTIFIER *and* the following is '='
         while (this.peek().type === lexer_1.TokenType.Identifier
             && this.tokens[this.pos + 1].text === '=') {
-            // consume the identifier target
             targets.push(this.advance().text);
-            // consume the '='
             this.expect(lexer_1.TokenType.Operator, '=');
         }
-        // now the RHS expression
         const expr = this.parseExpr();
         return { kind: 'assign', targets, expr };
     }
     parsePrint() {
         this.expect(lexer_1.TokenType.Keyword, 'IPAKITA');
         this.expect(lexer_1.TokenType.Punctuation, ':');
-        // const parts: Array<{ literal?: string, expr?: Expr }> = [];
-        // let first = true;
-        // while (true) {
-        //   if (!first) this.expect(TokenType.Operator, '&');
-        //   first = false;
-        //   const tok = this.peek();
-        //   if (tok.text === '$') { parts.push({ literal: '\n' }); this.advance(); }
-        //   else if (tok.text === '[') {
-        //     this.advance();
-        //     const contentTok = this.advance();
-        //     this.expect(TokenType.Punctuation, ']');
-        //     parts.push({ literal: contentTok.text });
-        //   } else if (tok.type === TokenType.Number || tok.type === TokenType.String) {
-        //     const lit = this.parseExpr(); parts.push({ expr: lit });
-        //   } else if (tok.type === TokenType.Identifier) {
-        //     const expr = this.parseExpr(); parts.push({ expr });
-        //   } else break;
-        //   if (this.peek().type === TokenType.EndOfFile) break;
-        //   if (this.peek().type === TokenType.Keyword && this.peek().text === 'KATAPUSAN') break;
-        // }
-        // return { kind: 'print', parts };
         const parts = [];
         let first = true;
         while (true) {
-            // Only consume '&' if it's actually next
             if (!first) {
                 const next = this.peek();
                 if (next.type === lexer_1.TokenType.Operator && next.text === '&') {
@@ -262,26 +205,21 @@ class Parser {
                 this.advance();
             }
             else if (tok.text === '[') {
-                // bracket literal: any single token inside
                 this.advance();
                 const contentTok = this.advance();
                 this.expect(lexer_1.TokenType.Punctuation, ']');
                 parts.push({ literal: contentTok.text });
             }
             else if (tok.text === '(') {
-                // allow parenthesized expression inside a print part
                 const expr = this.parseExpr();
                 parts.push({ expr });
             }
             else if (tok.type === lexer_1.TokenType.Number || tok.type === lexer_1.TokenType.String || tok.type === lexer_1.TokenType.Identifier) {
-                // parseExpr will advance for numbers, strings, identifiers
                 parts.push({ expr: this.parseExpr() });
             }
             else {
-                // no more print parts
                 break;
             }
-            // stop if block/EOF follows
             const peek = this.peek();
             if (peek.type === lexer_1.TokenType.EndOfFile)
                 break;
@@ -341,7 +279,7 @@ class Parser {
     }
     parseUnary() {
         if (this.peek().type === lexer_1.TokenType.Operator && /[-!]/.test(this.peek().text)) {
-            const op = this.advance().text; // "-" or "!"
+            const op = this.advance().text;
             const expr = this.parseUnary();
             return { kind: 'unary', operator: op, expr };
         }
@@ -360,7 +298,6 @@ class Parser {
             return { kind: 'literal', value: Number(tok.text) };
         }
         if (tok.type === lexer_1.TokenType.String) {
-            // special-case Bisaya boolean literals
             const s = tok.text;
             const up = s.toUpperCase();
             this.advance();
