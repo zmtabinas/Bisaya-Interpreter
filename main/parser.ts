@@ -1,7 +1,11 @@
 import { Token, TokenType } from './lexer';
 import { Value } from './types';
 
-export type Expr = { kind: 'literal', value: Value } | { kind: 'ident', name: string } | { kind: 'binary', left: Expr, operator: string, right: Expr } | { kind: 'unary',  operator: string, expr: Expr };
+export type Expr = 
+    { kind: 'literal', value: Value } 
+  | { kind: 'ident', name: string } 
+  | { kind: 'binary', left: Expr, operator: string, right: Expr } 
+  | { kind: 'unary',  operator: string, expr: Expr };
 export type Stmt =
   | { kind: 'decl', type: string, decls: Array<{ name: string, init?: Expr }> }
   | { kind: 'assign', targets: string[], expr: Expr }
