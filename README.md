@@ -2,8 +2,6 @@
 
 This is an ongoing project! 😌✌🏼  
 
-Tutorial Link: https://encr.pw/OM3Zh ▶️  
-
 !  !  !  IMPORTANT  !  !  !  
 You must have Deno installed and you have to enable  
 it via ".vscode/settings.json" file and set "deno.enable": true
